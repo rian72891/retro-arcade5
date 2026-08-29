@@ -1,5 +1,23 @@
 import { Link } from "@tanstack/react-router";
+import { Moon, Sun } from "lucide-react";
 import type { ReactNode } from "react";
+
+import { useTheme } from "@/lib/theme";
+
+export function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+      title={theme === "dark" ? "Tema claro" : "Tema escuro"}
+      className="rounded border border-border bg-background/60 p-2 text-muted-foreground transition-colors hover:text-neon"
+    >
+      {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+    </button>
+  );
+}
 
 export function ArcadeNav() {
   return (
@@ -19,6 +37,7 @@ export function ArcadeNav() {
           {item.label}
         </Link>
       ))}
+      <ThemeToggle />
     </nav>
   );
 }

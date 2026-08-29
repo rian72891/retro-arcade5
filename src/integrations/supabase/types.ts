@@ -21,8 +21,12 @@ export type Database = {
           file_name: string
           file_path: string
           id: string
+          is_favorite: boolean
+          last_played_at: string | null
           name: string
+          play_count: number
           system: string
+          updated_at: string
         }
         Insert: {
           cover_url?: string | null
@@ -30,8 +34,12 @@ export type Database = {
           file_name: string
           file_path: string
           id?: string
+          is_favorite?: boolean
+          last_played_at?: string | null
           name: string
+          play_count?: number
           system: string
+          updated_at?: string
         }
         Update: {
           cover_url?: string | null
@@ -39,8 +47,12 @@ export type Database = {
           file_name?: string
           file_path?: string
           id?: string
+          is_favorite?: boolean
+          last_played_at?: string | null
           name?: string
+          play_count?: number
           system?: string
+          updated_at?: string
         }
         Relationships: []
       }
