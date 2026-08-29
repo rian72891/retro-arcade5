@@ -50,9 +50,18 @@ function UploadPage() {
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!file) return toast.error("Selecione um arquivo de ROM");
-    if (!system) return toast.error("Escolha o console");
-    if (!name.trim()) return toast.error("Dê um nome ao jogo");
+    if (!file) {
+      toast.error("Selecione um arquivo de ROM");
+      return;
+    }
+    if (!system) {
+      toast.error("Escolha o console");
+      return;
+    }
+    if (!name.trim()) {
+      toast.error("Dê um nome ao jogo");
+      return;
+    }
     upload.mutate({ name, system, file });
   }
 
