@@ -132,6 +132,21 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+@theme inline {
+  --font-pixel: "Press Start 2P", monospace;
+  --font-display: "Chakra Petch", system-ui, sans-serif;
+  --color-neon-pink: var(--neon-pink);
+  --color-neon-cyan: var(--neon-cyan);
+  --color-neon-lime: var(--neon-lime);
+  --color-neon-amber: var(--neon-amber);
+  --shadow-neon: var(--shadow-neon);
+  --shadow-neon-cyan: var(--shadow-neon-cyan);
+  --shadow-cabinet: var(--shadow-cabinet);
+  --animate-flicker: flicker 3.5s linear infinite;
+  --animate-float: float 5s ease-in-out infinite;
+  --animate-scan: scan 8s linear infinite;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -140,5 +155,89 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-display);
+    background-image:
+      radial-gradient(circle at 15% 10%, oklch(0.45 0.24 320 / 0.28), transparent 45%),
+      radial-gradient(circle at 85% 15%, oklch(0.55 0.19 200 / 0.22), transparent 45%),
+      radial-gradient(circle at 50% 100%, oklch(0.5 0.2 280 / 0.25), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-pixel);
+    letter-spacing: 0.02em;
   }
 }
+
+@utility grid-floor {
+  background-image:
+    linear-gradient(oklch(0.7 0.22 320 / 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.7 0.22 320 / 0.25) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+@utility scanlines {
+  position: relative;
+}
+@utility scanlines-overlay {
+  background: repeating-linear-gradient(
+    to bottom,
+    oklch(0 0 0 / 0.35) 0px,
+    oklch(0 0 0 / 0.35) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+@utility text-neon {
+  color: var(--neon-cyan);
+  text-shadow:
+    0 0 6px var(--neon-cyan),
+    0 0 18px oklch(0.75 0.15 200 / 0.6);
+}
+
+@utility text-neon-pink {
+  color: var(--neon-pink);
+  text-shadow:
+    0 0 6px var(--neon-pink),
+    0 0 22px oklch(0.7 0.25 330 / 0.65);
+}
+
+@keyframes flicker {
+  0%,
+  92%,
+  100% {
+    opacity: 1;
+  }
+  93% {
+    opacity: 0.55;
+  }
+  95% {
+    opacity: 0.9;
+  }
+  97% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
