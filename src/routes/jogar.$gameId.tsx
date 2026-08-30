@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 
 import { ArcadeShell } from "@/components/arcade/ArcadeFrame";
 import { EmulatorStage } from "@/components/arcade/EmulatorStage";
-import { fetchGame } from "@/lib/arcade";
+import { fetchGame, markPlayed } from "@/lib/arcade";
 
 export const Route = createFileRoute("/jogar/$gameId")({
   ssr: false,
@@ -23,10 +24,21 @@ export const Route = createFileRoute("/jogar/$gameId")({
 
 function PlayPage() {
   const { gameId } = Route.useParams();
+  const queryClient = useQueryClient();
+  const marked = useRef<string | null>(null);
   const { data: game, isLoading, error } = useQuery({
     queryKey: ["game", gameId],
     queryFn: () => fetchGame(gameId),
   });
+
+  useEffect(() => {
+    if (!game || marked.current === game.id) return;
+    marked.current = game.id;
+    markPlayed(game)
+      .then(() => queryClient.invalidateQueries({ queryKey: ["games"] }))
+      .catch(() => {});
+  }, [game, queryClient]);
+
 
   return (
     <ArcadeShell title="Fliperama">
