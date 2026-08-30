@@ -111,7 +111,9 @@ export function EmulatorStage({ game }: { game: Game }) {
         window.EJS_gameID = game.id;
         window.EJS_pathtodata = EJS_DATA_PATH;
         window.EJS_startOnLoaded = true;
+        window.EJS_threads = isolated;
         window.EJS_volume = 0.8;
+
         window.EJS_cheats = loadCheats(game.id).map((c) => [c.desc, c.code]);
         window.EJS_Buttons = {
           playPause: true,
