@@ -50,6 +50,7 @@ declare global {
     EJS_gameID?: number | string;
     EJS_pathtodata?: string;
     EJS_startOnLoaded?: boolean;
+    EJS_threads?: boolean;
     EJS_volume?: number;
     EJS_Buttons?: Record<string, boolean>;
     EJS_cheats?: string[][];
@@ -65,6 +66,7 @@ declare global {
 }
 
 const EJS_DATA_PATH = "https://cdn.emulatorjs.org/stable/data/";
+
 
 const SPEEDS = [
   { label: "0.5x", value: 0.5 },
@@ -85,6 +87,12 @@ export function EmulatorStage({ game }: { game: Game }) {
   const [showCheats, setShowCheats] = useState(false);
   const [cheatDesc, setCheatDesc] = useState("");
   const [cheatCode, setCheatCode] = useState("");
+  const [isolated, setIsolated] = useState(false);
+
+  useEffect(() => {
+    setIsolated(typeof window !== "undefined" && window.crossOriginIsolated === true);
+  }, []);
+
 
   const system = systemById(game.system);
 
@@ -109,7 +117,9 @@ export function EmulatorStage({ game }: { game: Game }) {
         window.EJS_gameID = game.id;
         window.EJS_pathtodata = EJS_DATA_PATH;
         window.EJS_startOnLoaded = true;
+        window.EJS_threads = window.crossOriginIsolated === true;
         window.EJS_volume = 0.8;
+
         window.EJS_cheats = loadCheats(game.id).map((c) => [c.desc, c.code]);
         window.EJS_Buttons = {
           playPause: true,
@@ -274,7 +284,11 @@ export function EmulatorStage({ game }: { game: Game }) {
           <p className="truncate text-sm font-semibold">{game.name}</p>
           <p className="font-pixel text-[9px] uppercase text-muted-foreground">
             {system?.label ?? game.system}
+            <span className={isolated ? "ml-2 text-neon" : "ml-2 text-muted-foreground"}>
+              {isolated ? "• multi-thread" : "• single-thread"}
+            </span>
           </p>
+
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <HudButton onClick={restart} label="Reiniciar">
