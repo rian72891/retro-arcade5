@@ -50,6 +50,7 @@ declare global {
     EJS_gameID?: number | string;
     EJS_pathtodata?: string;
     EJS_startOnLoaded?: boolean;
+    EJS_threads?: boolean;
     EJS_volume?: number;
     EJS_Buttons?: Record<string, boolean>;
     EJS_cheats?: string[][];
@@ -65,6 +66,7 @@ declare global {
 }
 
 const EJS_DATA_PATH = "https://cdn.emulatorjs.org/stable/data/";
+
 
 const SPEEDS = [
   { label: "0.5x", value: 0.5 },
