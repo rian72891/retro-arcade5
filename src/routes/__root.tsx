@@ -105,6 +105,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+    scripts: [
+      // Habilita cross-origin isolation (COOP/COEP) via service worker para liberar
+      // SharedArrayBuffer e os cores multi-thread do emulador (N64/PS1).
+      { src: "/coi-serviceworker.js" },
+    ],
+
   }),
 
   shellComponent: RootShell,
