@@ -87,6 +87,12 @@ export function EmulatorStage({ game }: { game: Game }) {
   const [showCheats, setShowCheats] = useState(false);
   const [cheatDesc, setCheatDesc] = useState("");
   const [cheatCode, setCheatCode] = useState("");
+  const [isolated, setIsolated] = useState(false);
+
+  useEffect(() => {
+    setIsolated(typeof window !== "undefined" && window.crossOriginIsolated === true);
+  }, []);
+
 
   const system = systemById(game.system);
 
