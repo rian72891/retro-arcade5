@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Gamepad2, Upload, Joystick } from "lucide-react";
 
 import { ArcadeNav } from "@/components/arcade/ArcadeFrame";
+import { SYSTEMS } from "@/lib/arcade";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -81,6 +82,27 @@ function Index() {
             </div>
           ))}
         </section>
+
+        <section className="mt-24">
+          <h2 className="font-pixel text-center text-[10px] uppercase tracking-widest text-neon">
+            Consoles suportados
+          </h2>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            {SYSTEMS.map((s) => (
+              <span
+                key={s.id}
+                title={s.label}
+                className={`font-pixel rounded-md border border-border bg-card/70 px-4 py-3 text-[9px] uppercase shadow-cabinet ${s.accent}`}
+              >
+                {s.short}
+              </span>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Sem PS2 ou consoles mais pesados — não rodam bem no navegador.
+          </p>
+        </section>
+
 
         <p className="mt-16 text-center text-xs text-muted-foreground">
           Envie apenas ROMs de jogos que você possui legalmente.
