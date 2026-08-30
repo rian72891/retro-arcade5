@@ -284,7 +284,11 @@ export function EmulatorStage({ game }: { game: Game }) {
           <p className="truncate text-sm font-semibold">{game.name}</p>
           <p className="font-pixel text-[9px] uppercase text-muted-foreground">
             {system?.label ?? game.system}
+            <span className={isolated ? "ml-2 text-neon" : "ml-2 text-muted-foreground"}>
+              {isolated ? "• multi-thread" : "• single-thread"}
+            </span>
           </p>
+
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <HudButton onClick={restart} label="Reiniciar">
