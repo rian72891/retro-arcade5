@@ -25,31 +25,72 @@ export const SHADERS: { id: ShaderId; label: string }[] = [
 
 export const SCALES = [1, 2, 3, 4] as const;
 
+/** Modo de multi-thread do emulador. */
+export type ThreadMode = "auto" | "on" | "off";
+
+export const THREAD_MODES: { id: ThreadMode; label: string; hint: string }[] = [
+  { id: "auto", label: "Automático", hint: "Liga só em cores pesados (N64/PS1) com navegador isolado" },
+  { id: "on", label: "Multi-thread", hint: "Pode ajudar em N64/PS1 em PCs com vários núcleos" },
+  { id: "off", label: "Single-thread", hint: "Mais estável e normalmente mais rápido em cores leves" },
+];
+
+export type HudPosition = { x: number; y: number };
+
 export type PlayerSettings = {
   showFps: boolean;
   shader: ShaderId;
   scale: number;
   rewind: boolean;
   autoSave: boolean;
+  threads: ThreadMode;
   hudScale: number; // 0.8 – 1.4
   hudGap: number; // px
   hudOpacity: number; // 0.3 – 1
   virtualScale: number; // 0.7 – 1.5
   virtualOpacity: number; // 0.2 – 1
+  /** Deslocamentos livres (arraste) de cada elemento do HUD, por id. */
+  hudPositions: Record<string, HudPosition>;
 };
 
+/**
+ * Padrões focados em performance: rewind desligado (snapshot por frame é caro),
+ * shader "none", resolução nativa e threads em automático.
+ */
 export const DEFAULT_SETTINGS: PlayerSettings = {
   showFps: false,
   shader: "none",
   scale: 1,
-  rewind: true,
+  rewind: false,
   autoSave: true,
+  threads: "auto",
   hudScale: 1,
   hudGap: 8,
   hudOpacity: 1,
   virtualScale: 1,
   virtualOpacity: 0.8,
+  hudPositions: {},
 };
+
+/** Preset "Modo Performance". */
+export const PERFORMANCE_PRESET: Pick<
+  PlayerSettings,
+  "rewind" | "shader" | "scale" | "threads" | "showFps"
+> = {
+  rewind: false,
+  shader: "none",
+  scale: 1,
+  threads: "off",
+  showFps: true,
+};
+
+export function isPerformanceMode(settings: PlayerSettings) {
+  return (
+    !settings.rewind &&
+    settings.shader === "none" &&
+    settings.scale === 1 &&
+    settings.threads === "off"
+  );
+}
 
 const KEY = "fliperama-player-settings";
 
@@ -57,7 +98,13 @@ export function loadSettings(): PlayerSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
     const raw = window.localStorage.getItem(KEY);
-    return raw ? { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<PlayerSettings>) } : DEFAULT_SETTINGS;
+    if (!raw) return DEFAULT_SETTINGS;
+    const parsed = JSON.parse(raw) as Partial<PlayerSettings>;
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      hudPositions: parsed.hudPositions ?? {},
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -69,6 +116,16 @@ export function saveSettings(settings: PlayerSettings) {
   } catch {
     /* ignore */
   }
+}
+
+/** Cores em que multi-thread realmente ajuda; nos leves ele só adiciona overhead. */
+export const THREAD_FRIENDLY_CORES = ["n64", "psx"];
+
+/** Resolve se o emulador deve usar threads, dado o modo, o isolamento e o core. */
+export function shouldUseThreads(mode: ThreadMode, isolated: boolean, core: string) {
+  if (mode === "off" || !isolated) return false;
+  if (mode === "on") return true;
+  return THREAD_FRIENDLY_CORES.includes(core);
 }
 
 export const AUTO_SLOT = 0;
