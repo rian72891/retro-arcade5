@@ -29,7 +29,7 @@ export const SCALES = [1, 2, 3, 4] as const;
 export type ThreadMode = "auto" | "on" | "off";
 
 export const THREAD_MODES: { id: ThreadMode; label: string; hint: string }[] = [
-  { id: "auto", label: "Automático", hint: "Liga só quando o navegador está isolado (COOP/COEP)" },
+  { id: "auto", label: "Automático", hint: "Liga só em cores pesados (N64/PS1) com navegador isolado" },
   { id: "on", label: "Multi-thread", hint: "Pode ajudar em N64/PS1 em PCs com vários núcleos" },
   { id: "off", label: "Single-thread", hint: "Mais estável e normalmente mais rápido em cores leves" },
 ];
@@ -118,11 +118,14 @@ export function saveSettings(settings: PlayerSettings) {
   }
 }
 
-/** Resolve se o emulador deve usar threads, dado o modo e o isolamento do navegador. */
-export function shouldUseThreads(mode: ThreadMode, isolated: boolean) {
-  if (mode === "off") return false;
-  if (mode === "on") return isolated;
-  return isolated;
+/** Cores em que multi-thread realmente ajuda; nos leves ele só adiciona overhead. */
+export const THREAD_FRIENDLY_CORES = ["n64", "psx"];
+
+/** Resolve se o emulador deve usar threads, dado o modo, o isolamento e o core. */
+export function shouldUseThreads(mode: ThreadMode, isolated: boolean, core: string) {
+  if (mode === "off" || !isolated) return false;
+  if (mode === "on") return true;
+  return THREAD_FRIENDLY_CORES.includes(core);
 }
 
 export const AUTO_SLOT = 0;
