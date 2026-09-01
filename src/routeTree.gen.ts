@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as JogosRouteImport } from './routes/jogos'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as JogarGameIdRouteImport } from './routes/jogar.$gameId'
@@ -17,6 +18,11 @@ import { Route as JogarGameIdRouteImport } from './routes/jogar.$gameId'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JogosRoute = JogosRouteImport.update({
@@ -37,12 +43,14 @@ const JogarGameIdRoute = JogarGameIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/jogos': typeof JogosRoute
   '/upload': typeof UploadRoute
   '/jogar/$gameId': typeof JogarGameIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/jogos': typeof JogosRoute
   '/upload': typeof UploadRoute
   '/jogar/$gameId': typeof JogarGameIdRoute
@@ -50,20 +58,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/jogos': typeof JogosRoute
   '/upload': typeof UploadRoute
   '/jogar/$gameId': typeof JogarGameIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/jogos' | '/upload' | '/jogar/$gameId'
+  fullPaths: '/' | '/configuracoes' | '/jogos' | '/upload' | '/jogar/$gameId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/jogos' | '/upload' | '/jogar/$gameId'
-  id: '__root__' | '/' | '/jogos' | '/upload' | '/jogar/$gameId'
+  to: '/' | '/configuracoes' | '/jogos' | '/upload' | '/jogar/$gameId'
+  id:
+    | '__root__'
+    | '/'
+    | '/configuracoes'
+    | '/jogos'
+    | '/upload'
+    | '/jogar/$gameId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
   JogosRoute: typeof JogosRoute
   UploadRoute: typeof UploadRoute
   JogarGameIdRoute: typeof JogarGameIdRoute
@@ -76,6 +92,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/jogos': {
@@ -104,6 +127,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
   JogosRoute: JogosRoute,
   UploadRoute: UploadRoute,
   JogarGameIdRoute: JogarGameIdRoute,

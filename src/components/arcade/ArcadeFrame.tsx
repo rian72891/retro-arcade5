@@ -26,6 +26,8 @@ export function ArcadeNav() {
         { to: "/", label: "Início" },
         { to: "/jogos", label: "Meus Jogos" },
         { to: "/upload", label: "Upload" },
+        { to: "/configuracoes", label: "Config" },
+
       ].map((item) => (
         <Link
           key={item.to}
