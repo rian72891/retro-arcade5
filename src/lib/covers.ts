@@ -16,7 +16,7 @@ const REPOS: Record<string, string> = {
   arcade: "MAME",
 };
 
-/** libretro troca os caracteres &*/:`<>?\| por _ nos nomes de arquivo. */
+/** libretro troca caracteres inválidos de nome de arquivo por _ . */
 function sanitize(name: string) {
   return name.replace(/[&*/:`<>?\\|]/g, "_").trim();
 }
