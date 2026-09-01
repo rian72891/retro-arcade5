@@ -6,7 +6,15 @@ import { toast } from "sonner";
 
 import { ArcadeShell } from "@/components/arcade/ArcadeFrame";
 import { Cartridge } from "@/components/arcade/Cartridge";
-import { deleteGame, fetchGames, toggleFavorite, SYSTEMS, type Game } from "@/lib/arcade";
+import {
+  deleteGame,
+  fetchGames,
+  toggleFavorite,
+  uploadCover,
+  SYSTEMS,
+  type Game,
+} from "@/lib/arcade";
+
 
 export const Route = createFileRoute("/jogos")({
   head: () => ({
