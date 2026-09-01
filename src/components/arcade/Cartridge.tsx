@@ -1,18 +1,49 @@
 import { Link } from "@tanstack/react-router";
-import { Star, Trash2 } from "lucide-react";
+import { ImagePlus, Star, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
-import { coverPalette, gameInitials, systemById, type Game } from "@/lib/arcade";
+import {
+  coverPalette,
+  gameInitials,
+  resolveCoverUrl,
+  systemById,
+  type Game,
+} from "@/lib/arcade";
+import { coverCandidates } from "@/lib/covers";
 
 export function GameCover({ game }: { game: Game }) {
   const palette = coverPalette(game.name);
+  const [index, setIndex] = useState(0);
+  const [manual, setManual] = useState<string | null>(null);
 
-  if (game.cover_url) {
+  const candidates = game.cover_url ? [] : coverCandidates(game.system, game.name, game.file_name);
+
+  useEffect(() => {
+    setIndex(0);
+    setManual(null);
+    if (!game.cover_url) return;
+    let cancelled = false;
+    void resolveCoverUrl(game.cover_url).then((url) => {
+      if (!cancelled) setManual(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [game.cover_url, game.id]);
+
+  const src = manual ?? candidates[index] ?? null;
+
+  if (src) {
     return (
       <img
-        src={game.cover_url}
+        src={src}
         alt={`Capa de ${game.name}`}
         loading="lazy"
-        className="h-40 w-full object-cover"
+        onError={() => {
+          if (manual) setManual(null);
+          else setIndex((i) => i + 1);
+        }}
+        className="h-40 w-full bg-black object-contain"
       />
     );
   }
@@ -35,12 +66,15 @@ export function Cartridge({
   game,
   onDelete,
   onToggleFavorite,
+  onUploadCover,
 }: {
   game: Game;
   onDelete?: (game: Game) => void;
   onToggleFavorite?: (game: Game) => void;
+  onUploadCover?: (game: Game, file: File) => void;
 }) {
   const system = systemById(game.system);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="group relative">
@@ -80,6 +114,31 @@ export function Cartridge({
           >
             <Star className={`size-4 ${game.is_favorite ? "fill-current" : ""}`} />
           </button>
+        ) : null}
+
+        {onUploadCover ? (
+          <>
+            <button
+              type="button"
+              aria-label={`Enviar capa para ${game.name}`}
+              title="Enviar capa própria"
+              onClick={() => fileRef.current?.click()}
+              className="rounded-md border border-border bg-background/85 p-2 text-muted-foreground opacity-0 transition-all hover:text-neon group-hover:opacity-100"
+            >
+              <ImagePlus className="size-4" />
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onUploadCover(game, file);
+                e.target.value = "";
+              }}
+            />
+          </>
         ) : null}
 
         {onDelete ? (
