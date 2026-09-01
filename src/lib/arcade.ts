@@ -237,3 +237,50 @@ export function gameInitials(name: string) {
   if (words.length >= 2) return `${words[0]!.charAt(0)}${words[1]!.charAt(0)}`.toUpperCase();
   return name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "??";
 }
+
+export const COVER_BUCKET = "covers";
+
+/** Envia uma capa própria e grava o caminho no jogo. */
+export async function uploadCover(game: Game, file: File): Promise<Game> {
+  const ext = file.name.slice(file.name.lastIndexOf(".")) || ".png";
+  const path = `${game.id}-${Date.now()}${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from(COVER_BUCKET)
+    .upload(path, file, { upsert: true });
+  if (upErr) throw upErr;
+
+  const { data, error } = await supabase
+    .from("games")
+    .update({ cover_url: `storage:${path}` })
+    .eq("id", game.id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Game;
+}
+
+/** Resolve o cover_url salvo (URL absoluta ou caminho no storage privado). */
+export async function resolveCoverUrl(coverUrl: string): Promise<string | null> {
+  if (!coverUrl) return null;
+  if (!coverUrl.startsWith("storage:")) return coverUrl;
+  const path = coverUrl.slice("storage:".length);
+  const { data, error } = await supabase.storage
+    .from(COVER_BUCKET)
+    .createSignedUrl(path, 60 * 60 * 24);
+  if (error || !data) return null;
+  return data.signedUrl;
+}
+
+export async function clearCover(game: Game): Promise<Game> {
+  if (game.cover_url?.startsWith("storage:")) {
+    await supabase.storage.from(COVER_BUCKET).remove([game.cover_url.slice(8)]);
+  }
+  const { data, error } = await supabase
+    .from("games")
+    .update({ cover_url: null })
+    .eq("id", game.id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Game;
+}
