@@ -77,11 +77,22 @@ function GamesPage() {
     .sort((a, b) => (a.last_played_at! < b.last_played_at! ? 1 : -1))
     .slice(0, 4);
 
+  const cover = useMutation({
+    mutationFn: ({ game, file }: { game: Game; file: File }) => uploadCover(game, file),
+    onSuccess: () => {
+      toast.success("Capa atualizada");
+      invalidate();
+    },
+    onError: () => toast.error("Não foi possível enviar a capa"),
+  });
+
   const cardProps = (game: Game) => ({
     game,
     onDelete: (g: Game) => removeGame.mutate(g),
     onToggleFavorite: (g: Game) => favorite.mutate(g),
+    onUploadCover: (g: Game, file: File) => cover.mutate({ game: g, file }),
   });
+
 
   return (
     <ArcadeShell title="Meus Jogos" subtitle="Escolha um cartucho e aperte start.">
