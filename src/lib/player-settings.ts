@@ -36,6 +36,20 @@ export const THREAD_MODES: { id: ThreadMode; label: string; hint: string }[] = [
 
 export type HudPosition = { x: number; y: number };
 
+/** Variantes de core para os sistemas pesados. */
+export type N64Core = "mupen64plus_next" | "parallel_n64";
+export type PsxCore = "mednafen_psx_hw" | "pcsx_rearmed";
+
+export const N64_CORES: { id: N64Core; label: string }[] = [
+  { id: "mupen64plus_next", label: "Mupen64Plus-Next (padrão, mais preciso)" },
+  { id: "parallel_n64", label: "ParaLLEl N64 (mais rápido, menos preciso)" },
+];
+
+export const PSX_CORES: { id: PsxCore; label: string }[] = [
+  { id: "mednafen_psx_hw", label: "Beetle PSX HW (padrão, mais preciso)" },
+  { id: "pcsx_rearmed", label: "PCSX-ReARMed (mais leve)" },
+];
+
 export type PlayerSettings = {
   showFps: boolean;
   shader: ShaderId;
@@ -43,6 +57,8 @@ export type PlayerSettings = {
   rewind: boolean;
   autoSave: boolean;
   threads: ThreadMode;
+  n64Core: N64Core;
+  psxCore: PsxCore;
   hudScale: number; // 0.8 – 1.4
   hudGap: number; // px
   hudOpacity: number; // 0.3 – 1
@@ -51,6 +67,7 @@ export type PlayerSettings = {
   /** Deslocamentos livres (arraste) de cada elemento do HUD, por id. */
   hudPositions: Record<string, HudPosition>;
 };
+
 
 /**
  * Padrões focados em performance: rewind desligado (snapshot por frame é caro),
