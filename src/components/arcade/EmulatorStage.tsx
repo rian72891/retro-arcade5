@@ -193,8 +193,9 @@ export function EmulatorStage({ game }: { game: Game }) {
         const useThreads = shouldUseThreads(initial.threads, iso, core);
         window.EJS_threads = useThreads;
         setThreadsActive(useThreads);
-
+        window.EJS_volume = 0.8;
         window.EJS_rewindEnabled = initial.rewind;
+
 
         window.EJS_cheats = loadCheats(game.id).map((c) => [c.desc, c.code]);
         window.EJS_Buttons = {
