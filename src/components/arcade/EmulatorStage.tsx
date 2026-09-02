@@ -632,6 +632,34 @@ export function EmulatorStage({ game }: { game: Game }) {
           <div className="space-y-4">
             <p className="font-pixel text-[9px] uppercase text-neon">Vídeo & emulação</p>
 
+            <button
+              type="button"
+              onClick={performanceMode}
+              className={`font-pixel inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-3 text-[10px] uppercase transition-colors ${
+                isPerformanceMode(settings)
+                  ? "border-primary bg-primary/20 text-neon-pink"
+                  : "border-border bg-background/70 text-muted-foreground hover:text-neon"
+              }`}
+            >
+              <Rocket className="size-4" /> Modo Performance
+            </button>
+
+            <label className="block space-y-1 text-xs">
+              <span className="text-muted-foreground">Multi-thread (aplica ao recarregar)</span>
+              <select
+                value={settings.threads}
+                onChange={(e) => update("threads", e.target.value as ThreadMode)}
+                className="w-full rounded-md border border-border bg-input px-2 py-2 text-xs outline-none focus:border-accent"
+              >
+                {THREAD_MODES.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label} — {m.hint}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+
             <Toggle
               label="Contador de FPS"
               checked={settings.showFps}
