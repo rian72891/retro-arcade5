@@ -140,10 +140,13 @@ export function EmulatorStage({ game }: { game: Game }) {
   const [cheatDesc, setCheatDesc] = useState("");
   const [cheatCode, setCheatCode] = useState("");
   const [isolated, setIsolated] = useState(false);
+  const [threadsActive, setThreadsActive] = useState(false);
+  const [hudEdit, setHudEdit] = useState(false);
   const [fps, setFps] = useState(0);
   const [settings, setSettings] = useState<PlayerSettings>(() => loadSettings());
   const settingsRef = useRef(settings);
   const autoLoaded = useRef(false);
+
 
   useEffect(() => {
     setSettings(loadSettings());
