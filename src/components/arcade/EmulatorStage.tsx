@@ -186,8 +186,11 @@ export function EmulatorStage({ game }: { game: Game }) {
         window.EJS_gameID = game.id;
         window.EJS_pathtodata = EJS_DATA_PATH;
         window.EJS_startOnLoaded = true;
-        window.EJS_threads = window.crossOriginIsolated === true;
-        window.EJS_volume = 0.8;
+        const iso = window.crossOriginIsolated === true;
+        const useThreads = shouldUseThreads(initial.threads, iso, core);
+        window.EJS_threads = useThreads;
+        setThreadsActive(useThreads);
+
         window.EJS_rewindEnabled = initial.rewind;
 
         window.EJS_cheats = loadCheats(game.id).map((c) => [c.desc, c.code]);
