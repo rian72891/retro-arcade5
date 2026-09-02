@@ -6,12 +6,15 @@ import {
   Gamepad2,
   Gauge,
   Maximize,
+  Move,
   Rewind,
   RotateCcw,
+  Rocket,
   Save,
   Settings2,
   Sparkles,
   Trash2,
+  Undo2,
   Upload as UploadIcon,
   Volume2,
 } from "lucide-react";
@@ -31,12 +34,19 @@ import {
 } from "@/lib/save-states";
 import {
   AUTO_SLOT,
+  PERFORMANCE_PRESET,
   SCALES,
   SHADERS,
+  THREAD_MODES,
+  isPerformanceMode,
   loadSettings,
   saveSettings,
+  shouldUseThreads,
+  type HudPosition,
   type PlayerSettings,
+  type ThreadMode,
 } from "@/lib/player-settings";
+
 
 type GameManager = {
   getState?: () => Uint8Array | Promise<Uint8Array>;
@@ -130,10 +140,13 @@ export function EmulatorStage({ game }: { game: Game }) {
   const [cheatDesc, setCheatDesc] = useState("");
   const [cheatCode, setCheatCode] = useState("");
   const [isolated, setIsolated] = useState(false);
+  const [threadsActive, setThreadsActive] = useState(false);
+  const [hudEdit, setHudEdit] = useState(false);
   const [fps, setFps] = useState(0);
   const [settings, setSettings] = useState<PlayerSettings>(() => loadSettings());
   const settingsRef = useRef(settings);
   const autoLoaded = useRef(false);
+
 
   useEffect(() => {
     setSettings(loadSettings());
@@ -176,9 +189,13 @@ export function EmulatorStage({ game }: { game: Game }) {
         window.EJS_gameID = game.id;
         window.EJS_pathtodata = EJS_DATA_PATH;
         window.EJS_startOnLoaded = true;
-        window.EJS_threads = window.crossOriginIsolated === true;
+        const iso = window.crossOriginIsolated === true;
+        const useThreads = shouldUseThreads(initial.threads, iso, core);
+        window.EJS_threads = useThreads;
+        setThreadsActive(useThreads);
         window.EJS_volume = 0.8;
         window.EJS_rewindEnabled = initial.rewind;
+
 
         window.EJS_cheats = loadCheats(game.id).map((c) => [c.desc, c.code]);
         window.EJS_Buttons = {
@@ -479,12 +496,35 @@ export function EmulatorStage({ game }: { game: Game }) {
     fontSize: `${settings.hudScale}rem`,
   } as React.CSSProperties;
 
+  const moveHud = useCallback((id: string, pos: HudPosition) => {
+    setSettings((prev) => ({ ...prev, hudPositions: { ...prev.hudPositions, [id]: pos } }));
+  }, []);
+
+  function resetHudLayout() {
+    setSettings((prev) => ({ ...prev, hudPositions: {} }));
+    toast.success("Layout do HUD restaurado");
+  }
+
+  function performanceMode() {
+    setSettings((prev) => ({ ...prev, ...PERFORMANCE_PRESET }));
+    toast.success("Modo Performance ativado — recarregue o jogo para aplicar tudo");
+  }
+
+  const drag = (id: string) => ({
+    dragId: id,
+    editing: hudEdit,
+    pos: settings.hudPositions[id],
+    onMove: moveHud,
+  });
+
+  const gamepadPos = settings.hudPositions["virtual-gamepad"];
+
   return (
     <div className="space-y-4" style={{ fontSize: `${settings.hudScale * 100}%` }}>
       <style>{`
         #emulator-stage .ejs_virtualGamepad_parent {
           opacity: ${settings.virtualOpacity};
-          transform: scale(${settings.virtualScale});
+          transform: translate(${gamepadPos?.x ?? 0}px, ${gamepadPos?.y ?? 0}px) scale(${settings.virtualScale});
           transform-origin: bottom center;
         }
       `}</style>
@@ -497,33 +537,45 @@ export function EmulatorStage({ game }: { game: Game }) {
           <p className="truncate text-sm font-semibold">{game.name}</p>
           <p className="font-pixel text-[9px] uppercase text-muted-foreground">
             {system?.label ?? game.system}
-            <span className={isolated ? "ml-2 text-neon" : "ml-2 text-muted-foreground"}>
-              {isolated ? "• multi-thread" : "• single-thread"}
+            <span className={threadsActive ? "ml-2 text-neon" : "ml-2 text-muted-foreground"}>
+              {threadsActive ? "• multi-thread" : "• single-thread"}
             </span>
+            {!isolated ? <span className="ml-2 text-muted-foreground">• sem isolamento</span> : null}
             {settings.showFps ? <span className="ml-2 text-neon-pink">• {fps} FPS</span> : null}
           </p>
         </div>
         <div className="flex flex-wrap items-center" style={{ gap: `${settings.hudGap}px` }}>
-          <HudButton onClick={restart} label="Reiniciar">
+          <HudButton onClick={restart} label="Reiniciar" {...drag("restart")}>
             <RotateCcw className="size-4" />
           </HudButton>
-          <HudButton onClick={rewind} label="Rewind">
+          <HudButton onClick={rewind} label="Rewind" {...drag("rewind")}>
             <Rewind className="size-4" />
           </HudButton>
-          <HudButton onClick={() => void screenshot()} label="Screenshot">
+          <HudButton onClick={() => void screenshot()} label="Screenshot" {...drag("screenshot")}>
             <Camera className="size-4" />
           </HudButton>
-          <HudButton onClick={openControlMapping} label="Controles">
+          <HudButton onClick={openControlMapping} label="Controles" {...drag("controls")}>
             <Gamepad2 className="size-4" />
           </HudButton>
-          <HudButton onClick={() => setShowCheats((v) => !v)} label="Cheats">
+          <HudButton onClick={() => setShowCheats((v) => !v)} label="Cheats" {...drag("cheats")}>
             <Sparkles className="size-4" />
           </HudButton>
-          <HudButton onClick={() => setShowHudPanel((v) => !v)} label="Ajustes">
+          <HudButton
+            onClick={() => setShowHudPanel((v) => !v)}
+            label="Ajustes"
+            {...drag("settings")}
+          >
             <Settings2 className="size-4" />
           </HudButton>
-          <HudButton onClick={fullscreen} label="Tela cheia">
+          <HudButton onClick={fullscreen} label="Tela cheia" {...drag("fullscreen")}>
             <Maximize className="size-4" />
+          </HudButton>
+          <HudButton
+            onClick={() => setHudEdit((v) => !v)}
+            label={hudEdit ? "Concluir HUD" : "Editar HUD"}
+            active={hudEdit}
+          >
+            <Move className="size-4" />
           </HudButton>
           <Link
             to="/jogos"
@@ -535,6 +587,28 @@ export function EmulatorStage({ game }: { game: Game }) {
           </Link>
         </div>
       </div>
+
+      {hudEdit ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-accent bg-accent/5 px-4 py-3">
+          <p className="flex-1 text-xs text-muted-foreground">
+            Modo <strong>editar HUD</strong>: arraste cada botão (e o controle virtual) para onde
+            quiser. As posições ficam salvas neste navegador.
+          </p>
+          <button
+            type="button"
+            onClick={resetHudLayout}
+            className="font-pixel inline-flex items-center gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-[10px] uppercase text-muted-foreground transition-colors hover:text-neon"
+          >
+            <Undo2 className="size-4" /> Restaurar padrão
+          </button>
+          <DragHandle
+            label="Controle virtual"
+            pos={gamepadPos}
+            onMove={(p) => moveHud("virtual-gamepad", p)}
+          />
+        </div>
+      ) : null}
+
 
       <div className="relative overflow-hidden rounded-lg border border-border bg-black shadow-neon">
         <div id="emulator-stage" ref={containerRef} className="aspect-video w-full" />
@@ -557,6 +631,34 @@ export function EmulatorStage({ game }: { game: Game }) {
         <div className="grid gap-6 rounded-lg border border-border bg-card/70 p-4 shadow-cabinet md:grid-cols-2">
           <div className="space-y-4">
             <p className="font-pixel text-[9px] uppercase text-neon">Vídeo & emulação</p>
+
+            <button
+              type="button"
+              onClick={performanceMode}
+              className={`font-pixel inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-3 text-[10px] uppercase transition-colors ${
+                isPerformanceMode(settings)
+                  ? "border-primary bg-primary/20 text-neon-pink"
+                  : "border-border bg-background/70 text-muted-foreground hover:text-neon"
+              }`}
+            >
+              <Rocket className="size-4" /> Modo Performance
+            </button>
+
+            <label className="block space-y-1 text-xs">
+              <span className="text-muted-foreground">Multi-thread (aplica ao recarregar)</span>
+              <select
+                value={settings.threads}
+                onChange={(e) => update("threads", e.target.value as ThreadMode)}
+                className="w-full rounded-md border border-border bg-input px-2 py-2 text-xs outline-none focus:border-accent"
+              >
+                {THREAD_MODES.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label} — {m.hint}
+                  </option>
+                ))}
+              </select>
+            </label>
+
 
             <Toggle
               label="Contador de FPS"
@@ -853,25 +955,92 @@ function Slider({
   );
 }
 
+/** Hook de arraste livre: devolve handlers de pointer e o deslocamento atual. */
+function useDrag(pos: HudPosition | undefined, onMove: (pos: HudPosition) => void) {
+  const start = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    start.current = { px: e.clientX, py: e.clientY, x: pos?.x ?? 0, y: pos?.y ?? 0 };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const s = start.current;
+    if (!s) return;
+    onMove({ x: s.x + (e.clientX - s.px), y: s.y + (e.clientY - s.py) });
+  };
+  const onPointerUp = () => {
+    start.current = null;
+  };
+
+  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp };
+}
+
+/** Alça de arraste usada para elementos que não são botões do HUD (ex: gamepad virtual). */
+function DragHandle({
+  label,
+  pos,
+  onMove,
+}: {
+  label: string;
+  pos?: HudPosition | undefined;
+  onMove: (pos: HudPosition) => void;
+}) {
+  const handlers = useDrag(pos, onMove);
+  return (
+    <span
+      {...handlers}
+      role="button"
+      tabIndex={0}
+      aria-label={`Mover ${label}`}
+      className="inline-flex cursor-move touch-none select-none items-center gap-2 rounded-md border border-dashed border-accent bg-background/70 px-3 py-2 text-xs text-neon"
+    >
+      <Move className="size-4" /> {label}
+    </span>
+  );
+}
+
 function HudButton({
   onClick,
   label,
   children,
+  active,
+  dragId,
+  editing,
+  pos,
+  onMove,
 }: {
   onClick: () => void;
   label: string;
   children: React.ReactNode;
+  active?: boolean;
+  dragId?: string;
+  editing?: boolean;
+  pos?: HudPosition | undefined;
+  onMove?: (id: string, pos: HudPosition) => void;
 }) {
+  const drag = useDrag(pos, (next) => dragId && onMove?.(dragId, next));
+  const dragging = Boolean(editing && dragId);
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={dragging ? undefined : onClick}
+      {...(dragging ? drag : {})}
       aria-label={label}
       title={label}
-      className="inline-flex items-center gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-xs text-muted-foreground transition-colors hover:text-neon"
+      style={pos ? { transform: `translate(${pos.x}px, ${pos.y}px)` } : undefined}
+      className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs transition-colors ${
+        dragging
+          ? "cursor-move touch-none select-none border-dashed border-accent bg-accent/10 text-neon"
+          : active
+            ? "border-primary bg-primary/20 text-neon-pink"
+            : "border-border bg-background/70 text-muted-foreground hover:text-neon"
+      }`}
     >
       {children}
       <span className="hidden sm:inline">{label}</span>
     </button>
   );
 }
+
