@@ -956,7 +956,7 @@ function DragHandle({
   onMove,
 }: {
   label: string;
-  pos?: HudPosition;
+  pos?: HudPosition | undefined;
   onMove: (pos: HudPosition) => void;
 }) {
   const handlers = useDrag(pos, onMove);
@@ -989,7 +989,7 @@ function HudButton({
   active?: boolean;
   dragId?: string;
   editing?: boolean;
-  pos?: HudPosition;
+  pos?: HudPosition | undefined;
   onMove?: (id: string, pos: HudPosition) => void;
 }) {
   const drag = useDrag(pos, (next) => dragId && onMove?.(dragId, next));
