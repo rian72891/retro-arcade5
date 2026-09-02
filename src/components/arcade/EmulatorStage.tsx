@@ -6,12 +6,15 @@ import {
   Gamepad2,
   Gauge,
   Maximize,
+  Move,
   Rewind,
   RotateCcw,
+  Rocket,
   Save,
   Settings2,
   Sparkles,
   Trash2,
+  Undo2,
   Upload as UploadIcon,
   Volume2,
 } from "lucide-react";
@@ -31,12 +34,19 @@ import {
 } from "@/lib/save-states";
 import {
   AUTO_SLOT,
+  PERFORMANCE_PRESET,
   SCALES,
   SHADERS,
+  THREAD_MODES,
+  isPerformanceMode,
   loadSettings,
   saveSettings,
+  shouldUseThreads,
+  type HudPosition,
   type PlayerSettings,
+  type ThreadMode,
 } from "@/lib/player-settings";
+
 
 type GameManager = {
   getState?: () => Uint8Array | Promise<Uint8Array>;
