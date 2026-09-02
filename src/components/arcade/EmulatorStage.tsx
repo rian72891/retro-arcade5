@@ -927,25 +927,92 @@ function Slider({
   );
 }
 
+/** Hook de arraste livre: devolve handlers de pointer e o deslocamento atual. */
+function useDrag(pos: HudPosition | undefined, onMove: (pos: HudPosition) => void) {
+  const start = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    start.current = { px: e.clientX, py: e.clientY, x: pos?.x ?? 0, y: pos?.y ?? 0 };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const s = start.current;
+    if (!s) return;
+    onMove({ x: s.x + (e.clientX - s.px), y: s.y + (e.clientY - s.py) });
+  };
+  const onPointerUp = () => {
+    start.current = null;
+  };
+
+  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp };
+}
+
+/** Alça de arraste usada para elementos que não são botões do HUD (ex: gamepad virtual). */
+function DragHandle({
+  label,
+  pos,
+  onMove,
+}: {
+  label: string;
+  pos?: HudPosition;
+  onMove: (pos: HudPosition) => void;
+}) {
+  const handlers = useDrag(pos, onMove);
+  return (
+    <span
+      {...handlers}
+      role="button"
+      tabIndex={0}
+      aria-label={`Mover ${label}`}
+      className="inline-flex cursor-move touch-none select-none items-center gap-2 rounded-md border border-dashed border-accent bg-background/70 px-3 py-2 text-xs text-neon"
+    >
+      <Move className="size-4" /> {label}
+    </span>
+  );
+}
+
 function HudButton({
   onClick,
   label,
   children,
+  active,
+  dragId,
+  editing,
+  pos,
+  onMove,
 }: {
   onClick: () => void;
   label: string;
   children: React.ReactNode;
+  active?: boolean;
+  dragId?: string;
+  editing?: boolean;
+  pos?: HudPosition;
+  onMove?: (id: string, pos: HudPosition) => void;
 }) {
+  const drag = useDrag(pos, (next) => dragId && onMove?.(dragId, next));
+  const dragging = Boolean(editing && dragId);
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={dragging ? undefined : onClick}
+      {...(dragging ? drag : {})}
       aria-label={label}
       title={label}
-      className="inline-flex items-center gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-xs text-muted-foreground transition-colors hover:text-neon"
+      style={pos ? { transform: `translate(${pos.x}px, ${pos.y}px)` } : undefined}
+      className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs transition-colors ${
+        dragging
+          ? "cursor-move touch-none select-none border-dashed border-accent bg-accent/10 text-neon"
+          : active
+            ? "border-primary bg-primary/20 text-neon-pink"
+            : "border-border bg-background/70 text-muted-foreground hover:text-neon"
+      }`}
     >
       {children}
       <span className="hidden sm:inline">{label}</span>
     </button>
   );
 }
+
