@@ -135,7 +135,8 @@ export function EmulatorStage({ game }: { game: Game }) {
   const [isolated, setIsolated] = useState(false);
   const [threadsActive, setThreadsActive] = useState(false);
   const [hudEdit, setHudEdit] = useState(false);
-  const [fps, setFps] = useState(0);
+  const [padEdit, setPadEdit] = useState(false);
+
   const [settings, setSettings] = useState<PlayerSettings>(() => loadSettings());
   const settingsRef = useRef(settings);
   const autoLoaded = useRef(false);
