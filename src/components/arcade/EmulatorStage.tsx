@@ -541,7 +541,14 @@ export function EmulatorStage({ game }: { game: Game }) {
               {threadsActive ? "• multi-thread" : "• single-thread"}
             </span>
             {!isolated ? <span className="ml-2 text-muted-foreground">• sem isolamento</span> : null}
-            {settings.showFps ? <span className="ml-2 text-neon-pink">• {fps} FPS</span> : null}
+            {!webgl2 ? <span className="ml-2 text-destructive">• sem WebGL2</span> : null}
+            <span className="ml-2 text-muted-foreground">• {resolvedCore}</span>
+            {settings.showFps ? (
+              <span className="ml-2 text-neon-pink">
+                • <FpsCounter /> FPS
+              </span>
+            ) : null}
+
           </p>
         </div>
         <div className="flex flex-wrap items-center" style={{ gap: `${settings.hudGap}px` }}>
