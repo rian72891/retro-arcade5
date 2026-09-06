@@ -584,6 +584,13 @@ export function EmulatorStage({ game }: { game: Game }) {
           >
             <Move className="size-4" />
           </HudButton>
+          <HudButton
+            onClick={() => setPadEdit((v) => !v)}
+            label={padEdit ? "Concluir controles" : "Editar controles"}
+            active={padEdit}
+          >
+            <Gamepad2 className="size-4" />
+          </HudButton>
           <Link
             to="/jogos"
             aria-label="Voltar para a lista"
@@ -616,6 +623,23 @@ export function EmulatorStage({ game }: { game: Game }) {
         </div>
       ) : null}
 
+      {padEdit ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-primary bg-primary/5 px-4 py-3">
+          <p className="flex-1 text-xs text-muted-foreground">
+            Modo <strong>editar controles</strong>: arraste na tela o D-pad, os botões A/B/X/Y,
+            Start/Select, os gatilhos, o contador de FPS e o menu ☰. As posições ficam salvas neste
+            navegador e são reaplicadas em tela cheia.
+          </p>
+          <button
+            type="button"
+            onClick={resetPadLayout}
+            className="font-pixel inline-flex items-center gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-[10px] uppercase text-muted-foreground transition-colors hover:text-neon"
+          >
+            <Undo2 className="size-4" /> Restaurar padrão
+          </button>
+        </div>
+      ) : null}
+
 
       <div className="relative overflow-hidden rounded-lg border border-border bg-black shadow-neon">
         <div id="emulator-stage" ref={containerRef} className="aspect-video w-full" />
@@ -624,9 +648,10 @@ export function EmulatorStage({ game }: { game: Game }) {
             className="font-pixel pointer-events-none absolute left-3 top-3 rounded bg-background/70 px-2 py-1 text-[10px] text-neon"
             style={{ opacity: settings.hudOpacity }}
           >
-            {fps} FPS
+            <FpsCounter /> FPS
           </div>
         ) : null}
+
         {status !== "ready" ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <p className="font-pixel text-[10px] uppercase text-neon">{message}</p>
