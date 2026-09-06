@@ -116,26 +116,8 @@ const SPEEDS = [
   { label: "3x", value: 3 },
 ];
 
-/** Per-core internal-resolution / upscaling options exposed by EmulatorJS cores. */
-function scaleOptions(core: string, scale: number): Record<string, string> {
-  if (scale <= 1) return {};
-  switch (core) {
-    case "psx":
-      return {
-        beetle_psx_hw_internal_resolution: `${scale}x`,
-        beetle_psx_internal_resolution: `${scale}x`,
-        pcsx_rearmed_neon_enhancement_no_main: "enabled",
-      };
-    case "n64":
-      return {
-        "mupen64plus-43screensize": `${320 * scale}x${240 * scale}`,
-        "mupen64plus-Framebuffer": "enabled",
-        "parallel-n64-screensize": `${640 * scale}x${480 * scale}`,
-      };
-    default:
-      return {};
-  }
-}
+const PLAYER_COUNTS = [1, 2, 3, 4];
+
 
 export function EmulatorStage({ game }: { game: Game }) {
   const containerRef = useRef<HTMLDivElement>(null);
