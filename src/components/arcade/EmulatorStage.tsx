@@ -176,7 +176,7 @@ export function EmulatorStage({ game }: { game: Game }) {
         if (cancelled) return;
 
         window.EJS_player = "#emulator-stage";
-        window.EJS_core = core;
+        window.EJS_core = resolvedCore;
         window.EJS_gameUrl = romUrl;
         window.EJS_gameName = game.name;
         window.EJS_gameID = game.id;
@@ -215,8 +215,9 @@ export function EmulatorStage({ game }: { game: Game }) {
           "save-state-slot": "1",
           shader: initial.shader,
           rewindEnabled: initial.rewind ? "enabled" : "disabled",
-          ...scaleOptions(core, initial.scale),
+          ...coreOptions(resolvedCore, initial),
         };
+
 
         script = document.createElement("script");
         script.src = `${EJS_DATA_PATH}loader.js`;
