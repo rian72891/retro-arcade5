@@ -340,13 +340,14 @@ export function EmulatorStage({ game }: { game: Game }) {
     const emu = window.EJS_emulator;
     try {
       emu?.changeSettingOption?.("shader", settings.shader);
-      Object.entries(scaleOptions(core, settings.scale)).forEach(([k, v]) =>
+      Object.entries(coreOptions(resolvedCore, settingsRef.current)).forEach(([k, v]) =>
         emu?.changeSettingOption?.(k, v),
       );
     } catch {
       /* algumas opções só valem no próximo boot */
     }
-  }, [settings.shader, settings.scale, status, core]);
+  }, [settings.shader, settings.scale, settings.players, status, resolvedCore]);
+
 
   function restart() {
     const gm = manager();
