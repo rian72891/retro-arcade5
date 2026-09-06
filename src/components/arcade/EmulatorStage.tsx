@@ -34,18 +34,29 @@ import {
 } from "@/lib/save-states";
 import {
   AUTO_SLOT,
+  N64_CORES,
   PERFORMANCE_PRESET,
+  PSX_CORES,
   SCALES,
   SHADERS,
   THREAD_MODES,
   isPerformanceMode,
   loadSettings,
+  maxPlayers,
   saveSettings,
   shouldUseThreads,
   type HudPosition,
   type PlayerSettings,
   type ThreadMode,
 } from "@/lib/player-settings";
+import { coreOptions, hasWebGL2, resolveCore } from "@/lib/core-options";
+import {
+  PAD_ROOT_SELECTOR,
+  applyPadOffsets,
+  clearPadOffsets,
+  enablePadEditing,
+} from "@/lib/virtual-pad";
+
 
 
 type GameManager = {
@@ -105,26 +116,8 @@ const SPEEDS = [
   { label: "3x", value: 3 },
 ];
 
-/** Per-core internal-resolution / upscaling options exposed by EmulatorJS cores. */
-function scaleOptions(core: string, scale: number): Record<string, string> {
-  if (scale <= 1) return {};
-  switch (core) {
-    case "psx":
-      return {
-        beetle_psx_hw_internal_resolution: `${scale}x`,
-        beetle_psx_internal_resolution: `${scale}x`,
-        pcsx_rearmed_neon_enhancement_no_main: "enabled",
-      };
-    case "n64":
-      return {
-        "mupen64plus-43screensize": `${320 * scale}x${240 * scale}`,
-        "mupen64plus-Framebuffer": "enabled",
-        "parallel-n64-screensize": `${640 * scale}x${480 * scale}`,
-      };
-    default:
-      return {};
-  }
-}
+const PLAYER_COUNTS = [1, 2, 3, 4];
+
 
 export function EmulatorStage({ game }: { game: Game }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -142,7 +135,8 @@ export function EmulatorStage({ game }: { game: Game }) {
   const [isolated, setIsolated] = useState(false);
   const [threadsActive, setThreadsActive] = useState(false);
   const [hudEdit, setHudEdit] = useState(false);
-  const [fps, setFps] = useState(0);
+  const [padEdit, setPadEdit] = useState(false);
+
   const [settings, setSettings] = useState<PlayerSettings>(() => loadSettings());
   const settingsRef = useRef(settings);
   const autoLoaded = useRef(false);
@@ -160,6 +154,10 @@ export function EmulatorStage({ game }: { game: Game }) {
 
   const system = systemById(game.system);
   const core = system?.core ?? game.system;
+  const resolvedCore = resolveCore(core, settings);
+  const webgl2 = hasWebGL2();
+  const playerLimit = maxPlayers(core);
+
 
   const update = useCallback(
     <K extends keyof PlayerSettings>(key: K, value: PlayerSettings[K]) =>
@@ -183,7 +181,7 @@ export function EmulatorStage({ game }: { game: Game }) {
         if (cancelled) return;
 
         window.EJS_player = "#emulator-stage";
-        window.EJS_core = core;
+        window.EJS_core = resolvedCore;
         window.EJS_gameUrl = romUrl;
         window.EJS_gameName = game.name;
         window.EJS_gameID = game.id;
@@ -222,8 +220,9 @@ export function EmulatorStage({ game }: { game: Game }) {
           "save-state-slot": "1",
           shader: initial.shader,
           rewindEnabled: initial.rewind ? "enabled" : "disabled",
-          ...scaleOptions(core, initial.scale),
+          ...coreOptions(resolvedCore, initial),
         };
+
 
         script = document.createElement("script");
         script.src = `${EJS_DATA_PATH}loader.js`;
@@ -249,7 +248,7 @@ export function EmulatorStage({ game }: { game: Game }) {
       if (containerRef.current) containerRef.current.innerHTML = "";
       delete window.EJS_emulator;
     };
-  }, [game.file_path, game.id, game.name, core]);
+  }, [game.file_path, game.id, game.name, core, resolvedCore]);
 
   const manager = useCallback((): GameManager | undefined => window.EJS_emulator?.gameManager, []);
 
@@ -299,46 +298,46 @@ export function EmulatorStage({ game }: { game: Game }) {
     };
   }, [status, settings.autoSave, game.id, manager]);
 
-  /** Contador de FPS: usa o frame count do core quando disponível. */
+  /**
+   * Edição dos controles virtuais do EmulatorJS: aplica as posições salvas e
+   * reaplica quando o overlay é redesenhado (tela cheia, rotação).
+   */
   useEffect(() => {
-    if (!settings.showFps) {
-      setFps(0);
-      return;
-    }
-    let lastFrame: number | null = null;
-    let lastTime = performance.now();
-    let rafFrames = 0;
-    let raf = 0;
-    const tick = () => {
-      rafFrames += 1;
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
+    if (status !== "ready") return;
+    const host = containerRef.current;
+    if (!host) return;
+    let disable: (() => void) | null = null;
 
-    const interval = window.setInterval(() => {
-      const now = performance.now();
-      const seconds = (now - lastTime) / 1000;
-      const emu = window.EJS_emulator;
-      const frame = emu?.getFPS?.() ?? emu?.gameManager?.getFrameNum?.();
-      if (typeof frame === "number" && frame > 1000) {
-        // frame counter cumulativo
-        const value = lastFrame === null ? 0 : (frame - lastFrame) / seconds;
-        lastFrame = frame;
-        setFps(Math.round(value));
-      } else if (typeof frame === "number" && frame > 0) {
-        setFps(Math.round(frame));
-      } else {
-        setFps(Math.round(rafFrames / seconds));
+    const sync = () => {
+      const root = host.querySelector<HTMLElement>(PAD_ROOT_SELECTOR);
+      if (!root) return;
+      applyPadOffsets(root, settingsRef.current.hudPositions);
+      if (padEdit && !disable) {
+        disable = enablePadEditing(
+          root,
+          () => settingsRef.current.hudPositions,
+          (id, pos) =>
+            setSettings((prev) => ({ ...prev, hudPositions: { ...prev.hudPositions, [id]: pos } })),
+        );
       }
-      rafFrames = 0;
-      lastTime = now;
-    }, 500);
+    };
+
+    sync();
+    const observer = new MutationObserver(() => sync());
+    observer.observe(host, { childList: true, subtree: true });
+    const onResize = () => sync();
+    window.addEventListener("resize", onResize);
+    document.addEventListener("fullscreenchange", onResize);
 
     return () => {
-      cancelAnimationFrame(raf);
-      window.clearInterval(interval);
+      observer.disconnect();
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("fullscreenchange", onResize);
+      disable?.();
     };
-  }, [settings.showFps]);
+  }, [status, padEdit]);
+
+
 
   /** Aplica shader/upscaling ao vivo quando possível. */
   useEffect(() => {
@@ -346,13 +345,14 @@ export function EmulatorStage({ game }: { game: Game }) {
     const emu = window.EJS_emulator;
     try {
       emu?.changeSettingOption?.("shader", settings.shader);
-      Object.entries(scaleOptions(core, settings.scale)).forEach(([k, v]) =>
+      Object.entries(coreOptions(resolvedCore, settingsRef.current)).forEach(([k, v]) =>
         emu?.changeSettingOption?.(k, v),
       );
     } catch {
       /* algumas opções só valem no próximo boot */
     }
-  }, [settings.shader, settings.scale, status, core]);
+  }, [settings.shader, settings.scale, settings.players, status, resolvedCore]);
+
 
   function restart() {
     const gm = manager();
@@ -541,7 +541,14 @@ export function EmulatorStage({ game }: { game: Game }) {
               {threadsActive ? "• multi-thread" : "• single-thread"}
             </span>
             {!isolated ? <span className="ml-2 text-muted-foreground">• sem isolamento</span> : null}
-            {settings.showFps ? <span className="ml-2 text-neon-pink">• {fps} FPS</span> : null}
+            {!webgl2 ? <span className="ml-2 text-destructive">• sem WebGL2</span> : null}
+            <span className="ml-2 text-muted-foreground">• {resolvedCore}</span>
+            {settings.showFps ? (
+              <span className="ml-2 text-neon-pink">
+                • <FpsCounter /> FPS
+              </span>
+            ) : null}
+
           </p>
         </div>
         <div className="flex flex-wrap items-center" style={{ gap: `${settings.hudGap}px` }}>
@@ -577,6 +584,13 @@ export function EmulatorStage({ game }: { game: Game }) {
           >
             <Move className="size-4" />
           </HudButton>
+          <HudButton
+            onClick={() => setPadEdit((v) => !v)}
+            label={padEdit ? "Concluir controles" : "Editar controles"}
+            active={padEdit}
+          >
+            <Gamepad2 className="size-4" />
+          </HudButton>
           <Link
             to="/jogos"
             aria-label="Voltar para a lista"
@@ -609,6 +623,23 @@ export function EmulatorStage({ game }: { game: Game }) {
         </div>
       ) : null}
 
+      {padEdit ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-primary bg-primary/5 px-4 py-3">
+          <p className="flex-1 text-xs text-muted-foreground">
+            Modo <strong>editar controles</strong>: arraste na tela o D-pad, os botões A/B/X/Y,
+            Start/Select, os gatilhos, o contador de FPS e o menu ☰. As posições ficam salvas neste
+            navegador e são reaplicadas em tela cheia.
+          </p>
+          <button
+            type="button"
+            onClick={resetPadLayout}
+            className="font-pixel inline-flex items-center gap-2 rounded-md border border-border bg-background/70 px-3 py-2 text-[10px] uppercase text-muted-foreground transition-colors hover:text-neon"
+          >
+            <Undo2 className="size-4" /> Restaurar padrão
+          </button>
+        </div>
+      ) : null}
+
 
       <div className="relative overflow-hidden rounded-lg border border-border bg-black shadow-neon">
         <div id="emulator-stage" ref={containerRef} className="aspect-video w-full" />
@@ -617,9 +648,10 @@ export function EmulatorStage({ game }: { game: Game }) {
             className="font-pixel pointer-events-none absolute left-3 top-3 rounded bg-background/70 px-2 py-1 text-[10px] text-neon"
             style={{ opacity: settings.hudOpacity }}
           >
-            {fps} FPS
+            <FpsCounter /> FPS
           </div>
         ) : null}
+
         {status !== "ready" ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <p className="font-pixel text-[10px] uppercase text-neon">{message}</p>

@@ -59,6 +59,8 @@ export type PlayerSettings = {
   threads: ThreadMode;
   n64Core: N64Core;
   psxCore: PsxCore;
+  /** Número de jogadores locais (multiplayer no mesmo aparelho). */
+  players: number;
   hudScale: number; // 0.8 – 1.4
   hudGap: number; // px
   hudOpacity: number; // 0.3 – 1
@@ -80,6 +82,9 @@ export const DEFAULT_SETTINGS: PlayerSettings = {
   rewind: false,
   autoSave: true,
   threads: "auto",
+  n64Core: "mupen64plus_next",
+  psxCore: "mednafen_psx_hw",
+  players: 1,
   hudScale: 1,
   hudGap: 8,
   hudOpacity: 1,
@@ -91,13 +96,15 @@ export const DEFAULT_SETTINGS: PlayerSettings = {
 /** Preset "Modo Performance". */
 export const PERFORMANCE_PRESET: Pick<
   PlayerSettings,
-  "rewind" | "shader" | "scale" | "threads" | "showFps"
+  "rewind" | "shader" | "scale" | "threads" | "showFps" | "n64Core" | "psxCore"
 > = {
   rewind: false,
   shader: "none",
   scale: 1,
   threads: "off",
   showFps: true,
+  n64Core: "parallel_n64",
+  psxCore: "pcsx_rearmed",
 };
 
 export function isPerformanceMode(settings: PlayerSettings) {
@@ -105,9 +112,30 @@ export function isPerformanceMode(settings: PlayerSettings) {
     !settings.rewind &&
     settings.shader === "none" &&
     settings.scale === 1 &&
-    settings.threads === "off"
+    settings.threads === "off" &&
+    settings.n64Core === "parallel_n64" &&
+    settings.psxCore === "pcsx_rearmed"
   );
 }
+
+/** Máximo de jogadores locais por sistema. */
+export const MAX_PLAYERS: Record<string, number> = {
+  n64: 4,
+  psx: 4,
+  nes: 4,
+  snes: 4,
+  segaMD: 4,
+  arcade: 4,
+  gb: 1,
+  gbc: 1,
+  gba: 1,
+  atari2600: 2,
+};
+
+export function maxPlayers(core: string) {
+  return MAX_PLAYERS[core] ?? 2;
+}
+
 
 const KEY = "fliperama-player-settings";
 
