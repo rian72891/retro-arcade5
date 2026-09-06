@@ -153,6 +153,10 @@ export function EmulatorStage({ game }: { game: Game }) {
 
   const system = systemById(game.system);
   const core = system?.core ?? game.system;
+  const resolvedCore = resolveCore(core, settings);
+  const webgl2 = hasWebGL2();
+  const playerLimit = maxPlayers(core);
+
 
   const update = useCallback(
     <K extends keyof PlayerSettings>(key: K, value: PlayerSettings[K]) =>
