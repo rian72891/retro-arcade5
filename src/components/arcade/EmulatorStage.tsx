@@ -34,18 +34,29 @@ import {
 } from "@/lib/save-states";
 import {
   AUTO_SLOT,
+  N64_CORES,
   PERFORMANCE_PRESET,
+  PSX_CORES,
   SCALES,
   SHADERS,
   THREAD_MODES,
   isPerformanceMode,
   loadSettings,
+  maxPlayers,
   saveSettings,
   shouldUseThreads,
   type HudPosition,
   type PlayerSettings,
   type ThreadMode,
 } from "@/lib/player-settings";
+import { coreOptions, hasWebGL2, resolveCore } from "@/lib/core-options";
+import {
+  PAD_ROOT_SELECTOR,
+  applyPadOffsets,
+  clearPadOffsets,
+  enablePadEditing,
+} from "@/lib/virtual-pad";
+
 
 
 type GameManager = {
