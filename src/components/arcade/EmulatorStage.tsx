@@ -247,7 +247,7 @@ export function EmulatorStage({ game }: { game: Game }) {
       if (containerRef.current) containerRef.current.innerHTML = "";
       delete window.EJS_emulator;
     };
-  }, [game.file_path, game.id, game.name, core]);
+  }, [game.file_path, game.id, game.name, core, resolvedCore]);
 
   const manager = useCallback((): GameManager | undefined => window.EJS_emulator?.gameManager, []);
 
