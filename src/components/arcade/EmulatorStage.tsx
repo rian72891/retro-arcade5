@@ -297,46 +297,46 @@ export function EmulatorStage({ game }: { game: Game }) {
     };
   }, [status, settings.autoSave, game.id, manager]);
 
-  /** Contador de FPS: usa o frame count do core quando disponível. */
+  /**
+   * Edição dos controles virtuais do EmulatorJS: aplica as posições salvas e
+   * reaplica quando o overlay é redesenhado (tela cheia, rotação).
+   */
   useEffect(() => {
-    if (!settings.showFps) {
-      setFps(0);
-      return;
-    }
-    let lastFrame: number | null = null;
-    let lastTime = performance.now();
-    let rafFrames = 0;
-    let raf = 0;
-    const tick = () => {
-      rafFrames += 1;
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
+    if (status !== "ready") return;
+    const host = containerRef.current;
+    if (!host) return;
+    let disable: (() => void) | null = null;
 
-    const interval = window.setInterval(() => {
-      const now = performance.now();
-      const seconds = (now - lastTime) / 1000;
-      const emu = window.EJS_emulator;
-      const frame = emu?.getFPS?.() ?? emu?.gameManager?.getFrameNum?.();
-      if (typeof frame === "number" && frame > 1000) {
-        // frame counter cumulativo
-        const value = lastFrame === null ? 0 : (frame - lastFrame) / seconds;
-        lastFrame = frame;
-        setFps(Math.round(value));
-      } else if (typeof frame === "number" && frame > 0) {
-        setFps(Math.round(frame));
-      } else {
-        setFps(Math.round(rafFrames / seconds));
+    const sync = () => {
+      const root = host.querySelector<HTMLElement>(PAD_ROOT_SELECTOR);
+      if (!root) return;
+      applyPadOffsets(root, settingsRef.current.hudPositions);
+      if (padEdit && !disable) {
+        disable = enablePadEditing(
+          root,
+          () => settingsRef.current.hudPositions,
+          (id, pos) =>
+            setSettings((prev) => ({ ...prev, hudPositions: { ...prev.hudPositions, [id]: pos } })),
+        );
       }
-      rafFrames = 0;
-      lastTime = now;
-    }, 500);
+    };
+
+    sync();
+    const observer = new MutationObserver(() => sync());
+    observer.observe(host, { childList: true, subtree: true });
+    const onResize = () => sync();
+    window.addEventListener("resize", onResize);
+    document.addEventListener("fullscreenchange", onResize);
 
     return () => {
-      cancelAnimationFrame(raf);
-      window.clearInterval(interval);
+      observer.disconnect();
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("fullscreenchange", onResize);
+      disable?.();
     };
-  }, [settings.showFps]);
+  }, [status, padEdit]);
+
+
 
   /** Aplica shader/upscaling ao vivo quando possível. */
   useEffect(() => {
