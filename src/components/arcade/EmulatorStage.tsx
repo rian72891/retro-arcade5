@@ -505,6 +505,20 @@ export function EmulatorStage({ game }: { game: Game }) {
     toast.success("Layout do HUD restaurado");
   }
 
+  /** Restaura só as posições dos controles virtuais do emulador (prefixo vpad:). */
+  function resetPadLayout() {
+    setSettings((prev) => ({
+      ...prev,
+      hudPositions: Object.fromEntries(
+        Object.entries(prev.hudPositions).filter(([id]) => !id.startsWith(PAD_PREFIX)),
+      ),
+    }));
+    const root = containerRef.current?.querySelector<HTMLElement>(PAD_ROOT_SELECTOR);
+    if (root) clearPadOffsets(root);
+    toast.success("Controles na tela restaurados");
+  }
+
+
   function performanceMode() {
     setSettings((prev) => ({ ...prev, ...PERFORMANCE_PRESET }));
     toast.success("Modo Performance ativado — recarregue o jogo para aplicar tudo");
