@@ -51,11 +51,13 @@ import {
 } from "@/lib/player-settings";
 import { coreOptions, hasWebGL2, resolveCore } from "@/lib/core-options";
 import {
+  PAD_PREFIX,
   PAD_ROOT_SELECTOR,
   applyPadOffsets,
   clearPadOffsets,
   enablePadEditing,
 } from "@/lib/virtual-pad";
+
 
 
 
