@@ -1092,3 +1092,41 @@ function HudButton({
   );
 }
 
+
+/**
+ * Contador de FPS isolado: escreve direto no DOM (textContent), sem re-render do
+ * player — assim o overlay não custa nada em desempenho.
+ */
+function FpsCounter() {
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    let raf = 0;
+    let frames = 0;
+    let last = performance.now();
+    let lastEmuFrame: number | null = null;
+
+    const loop = (now: number) => {
+      frames += 1;
+      if (now - last >= 500) {
+        const emu = window.EJS_emulator;
+        let value = emu?.getFPS?.() ?? emu?.fps ?? 0;
+        const emuFrame = emu?.gameManager?.getFrameNum?.();
+        if (!value && typeof emuFrame === "number") {
+          if (lastEmuFrame !== null) value = ((emuFrame - lastEmuFrame) * 1000) / (now - last);
+          lastEmuFrame = emuFrame;
+        }
+        if (!value) value = (frames * 1000) / (now - last);
+        if (ref.current) ref.current.textContent = String(Math.round(value));
+        frames = 0;
+        last = now;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return <span ref={ref}>0</span>;
+}
