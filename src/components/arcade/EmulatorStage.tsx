@@ -756,7 +756,63 @@ export function EmulatorStage({ game }: { game: Game }) {
                 ))}
               </select>
             </label>
+
+            {core === "n64" ? (
+              <label className="block space-y-1 text-xs">
+                <span className="text-muted-foreground">Core do N64 (aplica ao recarregar)</span>
+                <select
+                  value={settings.n64Core}
+                  onChange={(e) => update("n64Core", e.target.value as PlayerSettings["n64Core"])}
+                  className="w-full rounded-md border border-border bg-input px-2 py-2 text-xs outline-none focus:border-accent"
+                >
+                  {N64_CORES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+
+            {core === "psx" ? (
+              <label className="block space-y-1 text-xs">
+                <span className="text-muted-foreground">
+                  Core do PlayStation (aplica ao recarregar)
+                </span>
+                <select
+                  value={settings.psxCore}
+                  onChange={(e) => update("psxCore", e.target.value as PlayerSettings["psxCore"])}
+                  className="w-full rounded-md border border-border bg-input px-2 py-2 text-xs outline-none focus:border-accent"
+                >
+                  {PSX_CORES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+
+            {playerLimit > 1 ? (
+              <label className="block space-y-1 text-xs">
+                <span className="text-muted-foreground">
+                  Jogadores no mesmo aparelho (até {playerLimit})
+                </span>
+                <select
+                  value={settings.players}
+                  onChange={(e) => update("players", Number(e.target.value))}
+                  className="w-full rounded-md border border-border bg-input px-2 py-2 text-xs outline-none focus:border-accent"
+                >
+                  {PLAYER_COUNTS.filter((n) => n <= playerLimit).map((n) => (
+                    <option key={n} value={n}>
+                      {n} jogador{n > 1 ? "es" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </div>
+
 
           <div className="space-y-4">
             <p className="font-pixel text-[9px] uppercase text-neon">HUD & controles na tela</p>
